@@ -1,7 +1,9 @@
 mod file_modification;
+mod TUI_control;
 
 use std::env::args;
 use iocraft::prelude::*;
+use unicode_width::UnicodeWidthStr;
 
 fn main() {
     // Reading the file name
@@ -11,15 +13,4 @@ fn main() {
         Ok(content) => content,
         Err(_) => file_modification::create_file(&*filename)
     };
-    // Display file content on screen using iocraft
-    element! {
-        View(
-            border_style: BorderStyle::Round,
-            border_color: Color::Blue,
-        ) {
-            Text(content: content)
-        }
-    }
-        .print();
-    
 }

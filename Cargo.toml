@@ -5,3 +5,5 @@ edition = "2024"
 
 [dependencies]
 iocraft = "0.7.10"
+unicode-width = "0.1.14"
+smol = "2.0.2"
