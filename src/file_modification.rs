@@ -5,12 +5,10 @@ pub fn read_file_content(file: &str) -> Result<String, io::Error> {
 }
 
 pub fn write_file_content(file: &str, content: String) -> Result<(), io::Error> {
-    match fs::write(file, &content) {
-        Ok(_) => Ok(()),
-        Err(_) =>
-            match fs::File::create(file) {
-                Ok(_) => fs::write(file, &content),
-                Err(e) => Err(e)
-            }
-    }
+    fs::write(file, &content)
+}
+
+pub fn create_file(file: &str) -> String {
+    fs::File::create(file).expect("Unable to create file, Please check your permissions and try again.");
+    "".to_string()
 }
