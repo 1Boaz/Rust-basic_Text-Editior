@@ -1,76 +1,49 @@
-use iocraft::prelude::*;
-use unicode_width::UnicodeWidthStr;
+use crossterm::{
+    event::{self, Event, KeyCode},
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    ExecutableCommand,
+};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders, Paragraph},
+};
+use std::io::{self, stdout, Stdout};
 
-const AREA_WIDTH: u32 = 80;
-const AREA_HEIGHT: u32 = 11;
-const FACE: &str = "👾";
 
-#[component]
-fn Example(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
-    let mut system = hooks.use_context_mut::<SystemContext>();
-    let mut x = hooks.use_state(|| 0);
-    let mut y = hooks.use_state(|| 0);
-    let mut should_exit = hooks.use_state(|| false);
+// Main application loop
+pub fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>, content: &str) -> io::Result<()> {
+    loop {
+        // Draw the UI
+        terminal.draw(|frame| {
+            let area = frame.size();
+            frame.render_widget(
+                Paragraph::new(content.to_string() + "\nPress 'q' to quit.")
+                    .block(Block::default().title("My App").borders(Borders::ALL)),
+                area,
+            );
+        })?;
 
-    hooks.use_terminal_events({
-        move |event| match event {
-            TerminalEvent::Key(KeyEvent { code, kind, .. }) if kind != KeyEventKind::Release => {
-                match code {
-                    KeyCode::Char('q') => should_exit.set(true),
-                    KeyCode::Up => y.set((y.get() as i32 - 1).max(0) as _),
-                    KeyCode::Down => y.set((y.get() + 1).min(AREA_HEIGHT - 1)),
-                    KeyCode::Left => x.set((x.get() as i32 - 1).max(0) as _),
-                    KeyCode::Right => x.set((x.get() + 1).min(AREA_WIDTH - FACE.width() as u32)),
-                    _ => {}
+        // Handle input
+        if event::poll(std::time::Duration::from_millis(16))? {
+            if let Event::Key(key) = event::read()? {
+                if key.code == KeyCode::Char('q') {
+                    break;
                 }
             }
-            _ => {}
-        }
-    });
-
-    if should_exit.get() {
-        system.exit();
-    }
-
-    element! {
-        View(
-            flex_direction: FlexDirection::Column,
-            padding: 2,
-            align_items: AlignItems::Center
-        ) {
-            Text(content: "Use arrow keys to move. Press \"q\" to exit.")
-            View(
-                border_style: BorderStyle::Round,
-                border_color: Color::Green,
-                height: AREA_HEIGHT + 2,
-                width: AREA_WIDTH + 2,
-            ) {
-                #(if should_exit.get() {
-                    element! {
-                        View(
-                            width: 100pct,
-                            height: 100pct,
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                        ) {
-                            Text(content: format!("Goodbye! {}", FACE))
-                        }
-                    }
-                } else {
-                    element! {
-                        View(
-                            padding_left: x.get(),
-                            padding_top: y.get(),
-                        ) {
-                            Text(content: FACE)
-                        }
-                    }
-                })
-            }
         }
     }
+    Ok(())
 }
 
-fn main() {
-    smol::block_on(element!(Example).render_loop()).unwrap();
+// Helper functions for terminal setup and restoration
+pub fn setup_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout>>> {
+    enable_raw_mode()?;
+    stdout().execute(EnterAlternateScreen)?;
+    Terminal::new(CrosstermBackend::new(stdout()))
+}
+
+pub fn restore_terminal() -> io::Result<()> {
+    disable_raw_mode()?;
+    stdout().execute(LeaveAlternateScreen)?;
+    Ok(())
 }
