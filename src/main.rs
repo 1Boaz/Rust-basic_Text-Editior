@@ -3,7 +3,7 @@ mod TUI_control;
 
 use std::env::args;
 use std::io;
-
+use crate::TUI_control::{restore_terminal, run, setup_terminal};
 
 fn main() -> io::Result<()> {
     // Reading the file name
@@ -13,14 +13,16 @@ fn main() -> io::Result<()> {
         Ok(content) => content,
         Err(_) => file_modification::create_file(&*filename)
     };
-        // 1. Setup the terminal
-    let mut terminal = TUI_control::setup_terminal()?;
+    let mut terminal = setup_terminal()?;
 
-    // 2. Run the application loop
-    TUI_control::run(&mut terminal, content.as_str())?;
+    // To start with an empty input box:
+    let new_text = run(&mut terminal, "")?;
+    println!("You entered: {:?}", new_text);
 
-    // 3. Restore the terminal
-    TUI_control::restore_terminal()?;
+    // To edit existing text:
+    let edited_text = run(&mut terminal, &content)?;
+    file_modification::write_file_content(&filename, edited_text.unwrap_or(file_modification::create_file(&*filename)))?;
 
+    restore_terminal()?;
     Ok(())
 }
