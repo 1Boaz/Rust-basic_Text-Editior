@@ -1,6 +1,3 @@
-// src/tui_control.rs
-
-// We need KeyEvent and KeyModifiers to detect Ctrl+S
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -27,7 +24,7 @@ impl AppState {
 
     // --- START: NEW multi-line cursor logic ---
 
-    /// Calculates the (row, col) of the cursor based on its 1D position and newlines.
+    // Calculates the (row, col) of the cursor based on its 1D position and newlines.
     fn get_cursor_location(&self) -> (usize, usize) {
         let text_before_cursor = &self.input[..self.cursor_position];
         let row = text_before_cursor.lines().count().saturating_sub(1);
@@ -63,6 +60,12 @@ impl AppState {
         }
     }
 
+    /// Moves the cursor down by one line if possible.
+    ///
+    /// This function calculates the current row and column of the cursor and checks if the cursor
+    /// can move down by comparing the row number with the total number of lines. If the cursor
+    /// can move down, it calculates the starting position of the next line and updates the cursor
+    /// position, ensuring the column is clamped to the length of the next line.
     fn move_cursor_down(&mut self) {
         let (row, _) = self.get_cursor_location();
         let line_count = self.input.lines().count();
@@ -105,6 +108,15 @@ impl AppState {
     }
 }
 
+// Run the Text Editor TUI, given a mutable reference to a
+// `Terminal<CrosstermBackend<Stdout>>` and an initial text string.
+//
+// Returns `Ok(Some(text))` if the user saves and exits (with Ctrl+S),
+// `Ok(None)` if the user cancels (with Esc), and `Err(err)` on any
+// other IO error.
+//
+// The `Terminal` is expected to be already set up in raw mode, and
+// this function will tear it down when it exits.
 pub fn run(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
     initial_text: &str,
@@ -195,7 +207,7 @@ pub fn run(
     }
 }
 
-// Helper functions for terminal setup and restoration (unchanged)
+// Helper functions for terminal setup and restoration
 pub fn setup_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout>>> {
     enable_raw_mode()?;
     stdout().execute(EnterAlternateScreen)?;

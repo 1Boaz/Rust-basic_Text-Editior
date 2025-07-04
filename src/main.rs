@@ -15,10 +15,6 @@ fn main() -> io::Result<()> {
     };
     let mut terminal = setup_terminal()?;
 
-    // To start with an empty input box:
-    let new_text = run(&mut terminal, "")?;
-    println!("You entered: {:?}", new_text);
-
     // To edit existing text:
     let edited_text = run(&mut terminal, &content)?;
     file_modification::write_file_content(&filename, edited_text.unwrap_or(file_modification::create_file(&*filename)))?;
